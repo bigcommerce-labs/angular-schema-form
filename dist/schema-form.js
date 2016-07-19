@@ -1250,7 +1250,6 @@ angular.module('schemaForm').provider('schemaForm',
           var gatheredReqs  = [];
           var gatheredProps = {};
 
-
           gatheredProps[k] = schema[props][k];
           delete schema[props][k];
 
@@ -1272,8 +1271,6 @@ angular.module('schemaForm').provider('schemaForm',
           if (required && gatheredReqs.indexOf(k) === -1) {
             gatheredReqs.push(k);
           }
-
-          console.log(gatheredReqs);
 
           schema[props][propertyKey] = {
             id: propertyKey,
