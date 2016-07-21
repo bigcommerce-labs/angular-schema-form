@@ -113,44 +113,37 @@ angular.module('schemaForm').provider('sfBuilder', ['sfPathProvider', function(s
         }
       }
     },
-    //This is gross, but kind of clean at the same time...
+
     oneOfTransclusion: function(args) {
-      var d = document;
       var transclusions = args.fieldFrag.querySelectorAll('[sf-field-oneof-transclude]');
 
-      if (transclusions.length) {
-        for (var i = 0; i < transclusions.length; i++) {
-          var n = transclusions[i];
+      transclusions.forEach(function(transclusion) {
+        var sub = transclusion.getAttribute('sf-field-oneof-transclude') || 'items';
+        var items = args.form[sub] || [];
+        var modelValue = 'selectors' + sfPathProvider.stringify(args.form.key).replace(/"/g, '&quot;');
 
-          // The sf-transclude attribute is not a directive,
-          // but has the name of what we're supposed to
-          // traverse. Default to `items`
-          var sub = n.getAttribute('sf-field-oneof-transclude') || 'items';
-          var items = args.form[sub];
-          var modelValue = "selectors" + sfPathProvider.stringify(args.form['key']).replace(/"/g, '&quot;');
+        items.forEach(function(item) {
+          var hideDiv = document.createElement('div');
+          var childFrag = args.build([item], args.path + '.' + sub, args.state);
 
-          if (items) {            
-            for (var i = 0; i < items.length; i++) {
-              var hideDiv = d.createElement('div');
-              hideDiv.setAttribute('ng-show', modelValue + " == " + "\'" + items[i]['title'] + "\'");
-
-              var childFrag = args.build([items[i]], args.path + '.' + sub, args.state);
-              n.appendChild(hideDiv).appendChild(childFrag);
-            }
-          }
-        }
-      }
+          hideDiv.setAttribute('ng-show', modelValue + " === " + "\'" + item.title + "\'");
+          transclusion
+              .appendChild(hideDiv)
+              .appendChild(childFrag);
+        });
+      });
     },
+
     condition: function(args) {
       // Do we have a condition? Then we slap on an ng-if on all children,
       // but be nice to existing ng-if.
       if (args.form.condition) {
         var evalExpr = 'evalExpr(' + args.path +
-                       '.condition, { model: model, "arrayIndex": $index})';
+            '.condition, { model: model, "arrayIndex": $index})';
         if (args.form.key) {
           var strKey = sfPathProvider.stringify(args.form.key);
           evalExpr = 'evalExpr(' + args.path + '.condition,{ model: model, "arrayIndex": $index, ' +
-                     '"modelValue": model' + (strKey[0] === '[' ? '' : '.') + strKey + '})';
+              '"modelValue": model' + (strKey[0] === '[' ? '' : '.') + strKey + '})';
         }
 
         var children = args.fieldFrag.children || args.fieldFrag.childNodes;
@@ -158,11 +151,11 @@ angular.module('schemaForm').provider('sfBuilder', ['sfPathProvider', function(s
           var child = children[i];
           var ngIf = child.getAttribute('ng-if');
           child.setAttribute(
-            'ng-if',
-            ngIf ?
-            '(' + ngIf +
-            ') || (' + evalExpr + ')'
-            : evalExpr
+              'ng-if',
+              ngIf ?
+              '(' + ngIf +
+              ') || (' + evalExpr + ')'
+                  : evalExpr
           );
         }
       }
