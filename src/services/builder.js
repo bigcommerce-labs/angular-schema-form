@@ -11,9 +11,19 @@ angular.module('schemaForm').provider('sfBuilder', ['sfPathProvider', function(s
   };
   var formId = 0;
 
+  if (!("firstElementChild" in document.createDocumentFragment())) {
+    Object.defineProperty(DocumentFragment.prototype, "firstElementChild", {
+      get: function () {
+        for (var nodes = this.childNodes, n, i = 0, l = nodes.length; i < l; ++i)
+          if (n = nodes[i], 1 === n.nodeType) return n;
+        return null;
+      }
+    });
+  }
+
   var builders = {
     sfField: function(args) {
-      args.fieldFrag.firstChild.setAttribute('sf-field', formId);
+      args.fieldFrag.firstElementChild.setAttribute('sf-field', formId);
 
       // We use a lookup table for easy access to our form.
       args.lookup['f' + formId] = args.form;
@@ -103,16 +113,37 @@ angular.module('schemaForm').provider('sfBuilder', ['sfPathProvider', function(s
         }
       }
     },
+
+    oneOfTransclusion: function(args) {
+      var transclusions = args.fieldFrag.querySelectorAll('[sf-field-oneof-transclude]');
+
+      transclusions.forEach(function(transclusion) {
+        var sub = transclusion.getAttribute('sf-field-oneof-transclude') || 'items';
+        var items = args.form[sub] || [];
+        var modelValue = 'selectors' + sfPathProvider.stringify(args.form.key).replace(/"/g, '&quot;');
+
+        items.forEach(function(item) {
+          var hideDiv = document.createElement('div');
+          var childFrag = args.build([item], args.path + '.' + sub, args.state);
+
+          hideDiv.setAttribute('ng-show', modelValue + " === " + "\'" + item.title + "\'");
+          transclusion
+              .appendChild(hideDiv)
+              .appendChild(childFrag);
+        });
+      });
+    },
+
     condition: function(args) {
       // Do we have a condition? Then we slap on an ng-if on all children,
       // but be nice to existing ng-if.
       if (args.form.condition) {
         var evalExpr = 'evalExpr(' + args.path +
-                       '.condition, { model: model, "arrayIndex": $index})';
+            '.condition, { model: model, "arrayIndex": $index})';
         if (args.form.key) {
           var strKey = sfPathProvider.stringify(args.form.key);
           evalExpr = 'evalExpr(' + args.path + '.condition,{ model: model, "arrayIndex": $index, ' +
-                     '"modelValue": model' + (strKey[0] === '[' ? '' : '.') + strKey + '})';
+              '"modelValue": model' + (strKey[0] === '[' ? '' : '.') + strKey + '})';
         }
 
         var children = args.fieldFrag.children || args.fieldFrag.childNodes;
@@ -120,11 +151,11 @@ angular.module('schemaForm').provider('sfBuilder', ['sfPathProvider', function(s
           var child = children[i];
           var ngIf = child.getAttribute('ng-if');
           child.setAttribute(
-            'ng-if',
-            ngIf ?
-            '(' + ngIf +
-            ') || (' + evalExpr + ')'
-            : evalExpr
+              'ng-if',
+              ngIf ?
+              '(' + ngIf +
+              ') || (' + evalExpr + ')'
+                  : evalExpr
           );
         }
       }
@@ -133,7 +164,7 @@ angular.module('schemaForm').provider('sfBuilder', ['sfPathProvider', function(s
       var items = args.fieldFrag.querySelector('[schema-form-array-items]');
       if (items) {
         state = angular.copy(args.state);
-        state.keyRedaction = state.keyRedaction || 0;
+        state.keyRedaction = 0;
         state.keyRedaction += args.form.key.length + 1;
 
         // Special case, an array with just one item in it that is not an object.
