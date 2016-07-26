@@ -1452,12 +1452,9 @@ angular.module('schemaForm').provider('schemaForm',
           f.type  = 'fieldset';
           f.key   = options.path;
           f.items = [];
+          f.dependencies = schema.dependencies;
 
           options.lookup[sfPathProvider.stringify(options.path)] = f;
-
-          if (schema.hasOwnProperty('dependencies')) {
-            f.dependencies = schema.dependencies;
-          }
 
           //recurse down into properties
           angular.forEach(modifiedProperties, function(v, k) {
@@ -1668,11 +1665,14 @@ angular.module('schemaForm').provider('schemaForm',
               });
             }
 
+            // RA: This whole block has been commented out since it's not doing anything
+            // The original library had obj.schema['default'] = false;
+            // Leaving this around in case there's a bug or something
             // Special case: checkbox
             // Since have to ternary state we need a default
-            if (obj.type === 'checkbox' && angular.isUndefined(obj.schema['default'])) {
-              obj.schema['default'] = undefined;
-            }
+            //if (obj.type === 'checkbox' && angular.isUndefined(obj.schema['default'])) {
+            //  obj.schema['default'] = undefined;
+            //}
 
             // Special case: template type with tempplateUrl that's needs to be loaded before rendering
             // TODO: this is not a clean solution. Maybe something cleaner can be made when $ref support
@@ -1714,11 +1714,10 @@ angular.module('schemaForm').provider('schemaForm',
               }
             });
 
-            if (schema.required && Array === schema.required.constructor) {
-              var fields = [];
-              for (var i = 0; i < defaults.object.length; i++) {
-                fields.push(defaults.object[i]['name']);
-              }
+            if (Array.isArray(schema.required)) {
+              var fields = defaults.object.map(function(obj) {
+                return obj.name;
+              });
 
               form = sortRequiredObjectsDesc(schema.required, fields, form);
             }
