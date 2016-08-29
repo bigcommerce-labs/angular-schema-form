@@ -307,6 +307,8 @@ angular.module('schemaForm').provider('schemaForm',
 
           angular.forEach(schema.properties, function(value, key) {
             var path = options.path.slice();
+            path.push(key);
+            
             var required = schema.required && schema.required.indexOf(key) !== -1;
             var def = defaultFormDefinition(key, value, {
               path: path,
@@ -315,8 +317,6 @@ angular.module('schemaForm').provider('schemaForm',
               ignore: options.ignore,
               global: options.global
             });
-
-            path.push(key);
 
             if (!options.ignore[provider] && def) {
               formObj.items.push(def);
