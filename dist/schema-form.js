@@ -1247,10 +1247,15 @@ angular.module('schemaForm').provider('schemaForm',
                 gatheredProps[dependencyName] = schema.properties[dependencyName];
                 delete schema.properties[currentDependency];
 
-                if (required && !gatheredReqs[dependencyName]) {
+                if (required) {
                   gatheredReqs[dependencyName] = true;
                 }
               });
+
+              // Add back the key so that it is also marked required.
+              if (Object.keys(gatheredReqs).length) {
+                gatheredReqs[key] = true;
+              }
 
               schema.properties[propertyKey] = {
                 id: propertyKey,
