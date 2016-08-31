@@ -1431,7 +1431,7 @@ angular.module('schemaForm').provider('schemaForm',
             var path = options.path.slice();
             path.push(key);
             
-            var required = schema.required && schema.required.indexOf(key) !== -1;
+            var required = value.required && value.required.length !== 0;
             var def = defaultFormDefinition(key, value, {
               path: path,
               required: required,
