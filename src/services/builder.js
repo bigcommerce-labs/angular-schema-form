@@ -117,7 +117,7 @@ angular.module('schemaForm').provider('sfBuilder', ['sfPathProvider', function(s
     oneOfTransclusion: function(args) {
       var transclusions = args.fieldFrag.querySelectorAll('[sf-field-oneof-transclude]');
 
-      transclusions.forEach(function(transclusion) {
+      angular.forEach(transclusions, function(transclusion) {
         var sub = transclusion.getAttribute('sf-field-oneof-transclude') || 'items';
         var items = args.form[sub] || [];
         var modelValue = 'selectors' + sfPathProvider.stringify(args.form.key).replace(/"/g, '&quot;');
