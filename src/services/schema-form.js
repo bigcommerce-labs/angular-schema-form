@@ -15,11 +15,18 @@ angular.module('schemaForm').provider('schemaForm',
         return type;
       }
 
+      var titleCase = function(input) {
+        input = input || '';
+        var out = input.split(/(?=[a-z])(?=[A-Z])|(?=[A-Z])(?=[A-Z][a-z])/).join(' ')
+
+        return out;
+      }
+
       //Creates an default titleMap list from an enum, i.e. a list of strings.
       var enumToTitleMap = function(enm) {
         var titleMap = []; //canonical titleMap format is a list.
         enm.forEach(function(name) {
-          titleMap.push({name: name, value: name});
+          titleMap.push({name: titleCase(name), value: name});
         });
         return titleMap;
       };
@@ -27,7 +34,7 @@ angular.module('schemaForm').provider('schemaForm',
       var oneOfToTitleMap = function(ones) {
         var titleMap = [];
         angular.forEach(ones, function(one) {
-          titleMap.push({name: one.title, value: one.title})
+          titleMap.push({name: titleCase(one.title), value: one.title})
         });
         return titleMap;
       };
@@ -90,6 +97,7 @@ angular.module('schemaForm').provider('schemaForm',
         if (schema.readOnly || schema.readonly) { f.readonly  = true; }
         if (schema.minimum) { f.minimum = schema.minimum + (schema.exclusiveMinimum ? 1 : 0); }
         if (schema.maximum) { f.maximum = schema.maximum - (schema.exclusiveMaximum ? 1 : 0); }
+        if (schema.format) { f.format = schema.format; }
 
         // Non standard attributes (DONT USE DEPRECATED)
         // If you must set stuff like this in the schema use the x-schema-form attribute
@@ -233,6 +241,17 @@ angular.module('schemaForm').provider('schemaForm',
           var f = stdFormObj(name, schema, options);
           f.key  = options.path;
           f.type = 'checkbox';
+          options.lookup[sfPathProvider.stringify(options.path)] = f;
+          return f;
+        }
+      };
+
+      // TODO - this should check for all datetimes and modify the reqs based on it
+      var datepicker = function(name, schema, options) {
+        if (stripNullType(schema.type) === 'string' && stripNullType(schema.format) === 'datetime-local') {
+          var f = stdFormObj(name, schema, options);
+          f.key  = options.path;
+          f.type = 'datepicker';
           options.lookup[sfPathProvider.stringify(options.path)] = f;
           return f;
         }
@@ -402,7 +421,7 @@ angular.module('schemaForm').provider('schemaForm',
       //First sorted by schema type then a list.
       //Order has importance. First handler returning an form snippet will be used.
       var defaults = {
-        string:  [select, text],
+        string:  [datepicker, select, text],
         object:  [fieldselect, fieldset],
         number:  [number],
         integer: [integer],
